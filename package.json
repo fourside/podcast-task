@@ -6,7 +6,7 @@
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "check": "biome ci src",
-    "deploy:schema": "wrangler d1 execute podcast-db --file=./schema.sql",
+    "deploy:schema": "wrangler d1 execute podcast-task --file=./schema.sql",
     "prepare": "git config --local core.hooksPath .githooks"
   },
   "devDependencies": {
