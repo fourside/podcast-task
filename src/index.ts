@@ -1,32 +1,95 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
+import { Hono } from "hono";
+import { basicAuth } from "hono/basic-auth";
+import type { Describe } from "superstruct";
+import { object, pattern, string, validate } from "superstruct";
 
-export interface Env {
-	// Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-	// MY_KV_NAMESPACE: KVNamespace;
-	//
-	// Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-	// MY_DURABLE_OBJECT: DurableObjectNamespace;
-	//
-	// Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-	// MY_BUCKET: R2Bucket;
-	//
-	// Example binding to a Service. Learn more at https://developers.cloudflare.com/workers/runtime-apis/service-bindings/
-	// MY_SERVICE: Fetcher;
-	//
-	// Example binding to a Queue. Learn more at https://developers.cloudflare.com/queues/javascript-apis/
-	// MY_QUEUE: Queue;
+type Bindings = {
+  DB: D1Database;
+  USERNAME: string;
+  PASSWORD: string;
+};
+
+const app = new Hono<{ Bindings: Bindings }>();
+
+app.use("/tasks", async (c, next) => {
+  const auth = basicAuth({
+    username: c.env.USERNAME,
+    password: c.env.PASSWORD,
+  });
+  return auth(c, next);
+});
+
+interface ProgramModel {
+  stationId: string;
+  title: string;
+  fromTime: string; // yyyymmddHHmm
+  duration: string; // min
+  personality: string;
 }
 
-export default {
-	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		return new Response('Hello World!');
-	},
-};
+interface ProgramRecord extends ProgramModel {
+  id: string;
+}
+
+const programSchema: Describe<ProgramModel> = object({
+  stationId: string(),
+  title: string(),
+  fromTime: pattern(string(), /^\d{12}$/),
+  duration: pattern(string(), /^\d+$/),
+  personality: string(),
+});
+
+app.get("/tasks", async (c) => {
+  const statement = c.env.DB.prepare(
+    "SELECT * FROM Tasks ORDER BY createdAt DESC"
+  );
+  const result = await statement.all<ProgramRecord>();
+  if (result.success) {
+    return c.json(result.results);
+  }
+  console.error(result.error);
+  return c.json({ message: "error" }, 500);
+});
+
+app.post("/tasks", async (c) => {
+  const json = await c.req.json();
+  const [err, program] = validate(json, programSchema);
+  if (err !== undefined) {
+    return c.json({ message: JSON.stringify(err) }, 400);
+  }
+  const id = crypto.randomUUID();
+  const statement = c.env.DB.prepare(
+    `INSERT INTO Tasks
+      (id, stationId, title, fromTime, duration, personality)
+    VALUES
+      (?1, ?2, ?3, ?4, ?5, ?6)`
+  ).bind(
+    id,
+    program.stationId,
+    program.title,
+    program.fromTime,
+    program.duration,
+    program.personality
+  );
+  const result = await statement.run();
+  if (result.success) {
+    return c.json({ message: "success" }, 201);
+  }
+  console.error(result.error);
+  return c.json({ message: "error" }, 500);
+});
+
+app.delete("/tasks/:id", async (c) => {
+  const id = c.req.param("id");
+  const statement = c.env.DB.prepare("DELETE FROM Tasks WHERE id = ?1").bind(
+    id
+  );
+  const result = await statement.run();
+  if (result.success) {
+    return c.json({ message: "success" });
+  }
+  console.error(result.error);
+  return c.json({ message: "error" }, 500);
+});
+
+export default app;

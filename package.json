@@ -5,12 +5,18 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
-    "start": "wrangler dev"
+    "check": "biome ci src",
+    "deploy:schema": "wrangler d1 execute podcast-db --file=./schema.sql",
+    "prepare": "git config --local core.hooksPath .githooks"
   },
   "devDependencies": {
     "@biomejs/biome": "1.5.2",
     "@cloudflare/workers-types": "^4.20240117.0",
     "typescript": "^5.0.4",
     "wrangler": "^3.0.0"
+  },
+  "dependencies": {
+    "hono": "^3.12.6",
+    "superstruct": "^1.0.3"
   }
 }
