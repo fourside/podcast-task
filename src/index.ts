@@ -41,7 +41,7 @@ const programSchema: Describe<ProgramModel> = object({
 
 app.get("/tasks", async (c) => {
   const statement = c.env.DB.prepare(
-    "SELECT * FROM Tasks ORDER BY createdAt DESC"
+    "SELECT * FROM Tasks ORDER BY createdAt DESC",
   );
   const result = await statement.all<ProgramRecord>();
   if (result.success) {
@@ -62,14 +62,14 @@ app.post("/tasks", async (c) => {
     `INSERT INTO Tasks
       (id, stationId, title, fromTime, duration, personality)
     VALUES
-      (?1, ?2, ?3, ?4, ?5, ?6)`
+      (?1, ?2, ?3, ?4, ?5, ?6)`,
   ).bind(
     id,
     program.stationId,
     program.title,
     program.fromTime,
     program.duration,
-    program.personality
+    program.personality,
   );
   const result = await statement.run();
   if (result.success) {
@@ -82,7 +82,7 @@ app.post("/tasks", async (c) => {
 app.delete("/tasks/:id", async (c) => {
   const id = c.req.param("id");
   const statement = c.env.DB.prepare("DELETE FROM Tasks WHERE id = ?1").bind(
-    id
+    id,
   );
   const result = await statement.run();
   if (result.success) {
