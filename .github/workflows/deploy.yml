@@ -31,7 +31,7 @@ jobs:
           secrets: |
             USERNAME
             PASSWORD
-          command: deploy --minify src/index.tsx
+          command: deploy --minify src/index.ts
         env:
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
