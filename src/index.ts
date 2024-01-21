@@ -1,3 +1,4 @@
+import { sentry } from "@hono/sentry";
 import { Hono } from "hono";
 import { basicAuth } from "hono/basic-auth";
 import type { Describe } from "superstruct";
@@ -10,6 +11,8 @@ type Bindings = {
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
+
+app.use("*", sentry());
 
 app.use("/tasks", async (c, next) => {
   const auth = basicAuth({
