@@ -22,6 +22,11 @@ app.use("/tasks", async (c, next) => {
   return auth(c, next);
 });
 
+app.onError((error, c) => {
+  c.status(500);
+  return c.json({ message: "error" });
+});
+
 interface ProgramModel {
   stationId: string;
   title: string;
