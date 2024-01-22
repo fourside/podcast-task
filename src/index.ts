@@ -55,8 +55,7 @@ app.get("/tasks", async (c) => {
   if (result.success) {
     return c.json(result.results);
   }
-  console.error(result.error);
-  return c.json({ message: "error" }, 500);
+  throw new Error(`sql error: ${result.error}`);
 });
 
 app.post("/tasks", async (c) => {
@@ -83,8 +82,7 @@ app.post("/tasks", async (c) => {
   if (result.success) {
     return c.json({ message: "success" }, 201);
   }
-  console.error(result.error);
-  return c.json({ message: "error" }, 500);
+  throw new Error(`sql error: ${result.error}`);
 });
 
 app.delete("/tasks/:id", async (c) => {
@@ -96,8 +94,7 @@ app.delete("/tasks/:id", async (c) => {
   if (result.success) {
     return c.json({ message: "success" });
   }
-  console.error(result.error);
-  return c.json({ message: "error" }, 500);
+  throw new Error(`sql error: ${result.error}`);
 });
 
 export default app;
