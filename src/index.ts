@@ -1,8 +1,11 @@
 import { sentry } from "@hono/sentry";
+import { desc, eq, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { basicAuth } from "hono/basic-auth";
 import type { Describe } from "superstruct";
 import { object, pattern, string, validate } from "superstruct";
+import { tasks } from "./schema";
 
 type Bindings = {
   DB: D1Database;
@@ -27,19 +30,9 @@ app.onError((error, c) => {
   return c.json({ message: "error" });
 });
 
-interface ProgramModel {
-  stationId: string;
-  title: string;
-  fromTime: string; // yyyymmddHHmm
-  duration: string; // min
-  personality: string;
-}
+type Task = Omit<typeof tasks.$inferSelect, "id" | "createdAt">;
 
-interface ProgramRecord extends ProgramModel {
-  id: string;
-}
-
-const programSchema: Describe<ProgramModel> = object({
+const taskSchema: Describe<Task> = object({
   stationId: string(),
   title: string(),
   fromTime: pattern(string(), /^\d{12}$/),
@@ -48,53 +41,46 @@ const programSchema: Describe<ProgramModel> = object({
 });
 
 app.get("/tasks", async (c) => {
-  const statement = c.env.DB.prepare(
-    "SELECT * FROM Tasks ORDER BY createdAt DESC",
-  );
-  const result = await statement.all<ProgramRecord>();
-  if (result.success) {
-    return c.json(result.results);
-  }
-  throw new Error(`sql error: ${result.error}`);
+  const db = drizzle(c.env.DB);
+  const result = await db
+    .select()
+    .from(tasks)
+    .orderBy(desc(tasks.createdAt))
+    .all();
+  return c.json(result);
 });
 
 app.post("/tasks", async (c) => {
   const json = await c.req.json();
-  const [err, program] = validate(json, programSchema);
+  const [err, task] = validate(json, taskSchema);
   if (err !== undefined) {
     return c.json({ message: JSON.stringify(err) }, 400);
   }
+  const db = drizzle(c.env.DB);
+  const prepare = db
+    .insert(tasks)
+    .values({
+      id: sql.placeholder("id"),
+      stationId: sql.placeholder("sationId"),
+      title: sql.placeholder("title"),
+      fromTime: sql.placeholder("fromTime"),
+      duration: sql.placeholder("duration"),
+      personality: sql.placeholder("personality"),
+    })
+    .prepare();
   const id = crypto.randomUUID();
-  const statement = c.env.DB.prepare(
-    `INSERT INTO Tasks
-      (id, stationId, title, fromTime, duration, personality)
-    VALUES
-      (?1, ?2, ?3, ?4, ?5, ?6)`,
-  ).bind(
-    id,
-    program.stationId,
-    program.title,
-    program.fromTime,
-    program.duration,
-    program.personality,
-  );
-  const result = await statement.run();
-  if (result.success) {
-    return c.json({ message: "success" }, 201);
-  }
-  throw new Error(`sql error: ${result.error}`);
+  await prepare.execute({ id, ...task });
+  return c.json({ message: "success" }, 201);
 });
 
 app.delete("/tasks/:id", async (c) => {
-  const id = c.req.param("id");
-  const statement = c.env.DB.prepare("DELETE FROM Tasks WHERE id = ?1").bind(
-    id,
-  );
-  const result = await statement.run();
-  if (result.success) {
-    return c.json({ message: "success" });
-  }
-  throw new Error(`sql error: ${result.error}`);
+  const db = drizzle(c.env.DB);
+  const prepare = db
+    .delete(tasks)
+    .where(eq(tasks.id, sql.placeholder("id")))
+    .prepare();
+  await prepare.execute({ id: c.req.param("id") });
+  return c.json({ message: "success" });
 });
 
 export default app;

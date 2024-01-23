@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@hono/sentry": "^1.0.0",
+    "drizzle-orm": "^0.29.3",
     "hono": "^3.12.6",
     "superstruct": "^1.0.3"
   }
