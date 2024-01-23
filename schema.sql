@@ -8,3 +8,4 @@ CREATE TABLE IF NOT EXISTS Tasks (
 	personality TEXT NOT NULL,
 	createdAt TEXT NOT NULL DEFAULT (DATETIME('now', 'localtime'))
 );
+CREATE UNIQUE INDEX `task_unique` ON `Tasks` (`title`, `fromTime`);
