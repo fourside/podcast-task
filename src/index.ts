@@ -2,19 +2,18 @@ import { sentry } from "@hono/sentry";
 import { desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
-import { basicAuth } from "hono/basic-auth";
 import { HTTPException } from "hono/http-exception";
+import { jwt } from "hono/jwt";
 import type { Describe } from "superstruct";
-import { object, pattern, string, validate } from "superstruct";
+import { number, object, pattern, string, validate } from "superstruct";
 import { logger } from "./logger";
-import { tasks } from "./schema";
+import { tasks, users } from "./schema";
 
 type Bindings = {
   DB: D1Database;
-  USERNAME: string;
-  PASSWORD: string;
   LOGFLARE_API_KEY: string;
   LOGFLARE_SOURCE: string;
+  JWT_SECRET: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -23,12 +22,55 @@ app.use("*", sentry());
 
 app.use("*", logger);
 
-app.use("/tasks", async (c, next) => {
-  const auth = basicAuth({
-    username: c.env.USERNAME,
-    password: c.env.PASSWORD,
+app.use("*", (c, next) => {
+  const jwtMiddleware = jwt({
+    secret: c.env.JWT_SECRET,
+    alg: "HS512",
   });
-  return auth(c, next);
+  return jwtMiddleware(c, next);
+});
+
+type JwtPayload = {
+  sub: string;
+  name: string;
+  iss: string;
+  iat: number;
+  exp: number;
+  nbf: number;
+  aud: string;
+};
+
+const jwtPayloadSchema: Describe<JwtPayload> = object({
+  sub: string(),
+  name: string(),
+  iss: string(),
+  iat: number(),
+  exp: number(),
+  nbf: number(),
+  aud: string(),
+});
+
+app.use("*", async (c, next) => {
+  const payloadJson = c.get("jwtPayload");
+  const [err, payload] = validate(payloadJson, jwtPayloadSchema);
+  if (err !== undefined) {
+    throw new HTTPException(401, {
+      res: new Response(`${err.key} is invalid`),
+    });
+  }
+  const db = drizzle(c.env.DB);
+  const prepare = db
+    .select()
+    .from(users)
+    .where(eq(users.name, sql.placeholder("name")))
+    .prepare();
+  const result = await prepare.all({ name: payload.name });
+  if (result.length !== 1) {
+    throw new HTTPException(401, {
+      res: new Response(JSON.stringify({ message: "not authorized" })),
+    });
+  }
+  await next();
 });
 
 app.onError((error, c) => {

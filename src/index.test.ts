@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/d1";
+import { sign } from "hono/jwt";
 import {
   afterAll,
   beforeAll,
@@ -9,25 +10,29 @@ import {
 } from "vitest";
 import type { UnstableDevWorker } from "wrangler";
 import { getBindingsProxy, unstable_dev } from "wrangler";
-import { tasks } from "./schema";
+import { tasks, users } from "./schema";
 
-type TaskRecode = typeof tasks.$inferSelect;
+type TaskRecord = typeof tasks.$inferSelect;
 
-describe("index.ts", () => {
+describe("index.ts", async () => {
   let worker: UnstableDevWorker;
   let d1: D1Database;
   let dispose: () => Promise<void>;
-  const USERNAME = "user";
-  const PASSWORD = "pass";
+  const JWT_SECRET = await createKey();
 
   beforeAll(async () => {
     worker = await unstable_dev("src/index.ts", {
       experimental: { disableExperimentalWarning: true },
-      vars: { USERNAME, PASSWORD },
+      vars: { JWT_SECRET },
     });
     const bindingProxy = await getBindingsProxy();
     d1 = bindingProxy.bindings.DB as D1Database;
     dispose = bindingProxy.dispose;
+
+    await drizzle(d1).delete(users);
+    await drizzle(d1)
+      .insert(users)
+      .values({ id: crypto.randomUUID(), name: "fourside@gmail.com" });
   });
 
   beforeEach(async () => {
@@ -39,10 +44,69 @@ describe("index.ts", () => {
     await worker.stop();
   });
 
-  describe("basic auth", () => {
-    test("fail", async () => {
+  describe("auth", () => {
+    test("no authorization header", async () => {
       // arrange & act
-      const res = await worker.fetch("/tasks"); // not pass authorization header
+      const res = await worker.fetch("/tasks");
+      // assert
+      expect(res.status).toBe(401);
+    });
+
+    test("invalid jwt payload", async () => {
+      // arrange & act
+      const invalidSchema = { ...jwtPayload, sub: undefined };
+      // nbf or expired
+      const expired = {
+        ...jwtPayload,
+        exp: Math.floor(new Date(2000, 1, 1).getTime() / 1000),
+      };
+      const now = new Date();
+      const nbf = {
+        ...jwtPayload,
+        nbf: Math.floor(
+          new Date(
+            now.getFullYear() + 1,
+            now.getMonth(),
+            now.getDate(),
+          ).getTime() / 1000,
+        ),
+      };
+      const resList = await Promise.all([
+        worker.fetch("/tasks", {
+          headers: {
+            Authorization: `Bearer ${await createJwt(
+              invalidSchema,
+              JWT_SECRET,
+            )}`,
+          },
+        }),
+        worker.fetch("/tasks", {
+          headers: {
+            Authorization: `Bearer ${await createJwt(expired, JWT_SECRET)}`,
+          },
+        }),
+        worker.fetch("/tasks", {
+          headers: {
+            Authorization: `Bearer ${await createJwt(nbf, JWT_SECRET)}`,
+          },
+        }),
+      ]);
+      // assert
+      expect(resList[0].status).toBe(401);
+      expect(resList[1].status).toBe(401);
+      expect(resList[2].status).toBe(401);
+    });
+
+    test("user not in DB", async () => {
+      // arrange & act
+      const res = await worker.fetch("/tasks", {
+        headers: {
+          Authorization: `Bearer ${await createJwt(
+            { ...jwtPayload, name: "not_user@example.com" },
+            JWT_SECRET,
+          )}`,
+        },
+      });
       // assert
       expect(res.status).toBe(401);
     });
@@ -51,7 +115,7 @@ describe("index.ts", () => {
   describe("get tasks", () => {
     test("success", async () => {
       // arrange
-      const values: TaskRecode[] = [
+      const values: TaskRecord[] = [
         {
           id: crypto.randomUUID(),
           stationId: "TBS",
@@ -79,6 +143,7 @@ describe("index.ts", () => {
         a.createdAt > b.createdAt ? -1 : a.createdAt < b.createdAt ? 1 : 0,
       );
       // assert
+      expect(res.status).toStrictEqual(200);
       expect(json).toStrictEqual(values);
     });
 
@@ -87,6 +152,7 @@ describe("index.ts", () => {
       const res = await getTasks();
       const json = await res.json();
       // assert
+      expect(res.status).toStrictEqual(200);
       expect(json).toStrictEqual([]);
     });
   });
@@ -219,9 +285,21 @@ describe("index.ts", () => {
     });
   });
 
+  const jwtPayload = {
+    sub: crypto.randomUUID(),
+    name: "fourside@gmail.com",
+    iss: "podcast-task-test",
+    iat: Math.floor(new Date().getTime() / 1000),
+    exp: Math.floor(new Date(2100, 12, 31).getTime() / 1000),
+    nbf: Math.floor(new Date().getTime() / 1000),
+    aud: "podcast-task",
+  } as const;
+
   async function getTasks() {
     return worker.fetch("/tasks", {
-      headers: { Authorization: `Basic ${btoa(`${USERNAME}:${PASSWORD}`)}` },
+      headers: {
+        Authorization: `Bearer ${await createJwt(jwtPayload, JWT_SECRET)}`,
+      },
     });
   }
 
@@ -231,7 +309,7 @@ describe("index.ts", () => {
       body: JSON.stringify(body),
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Basic ${btoa(`${USERNAME}:${PASSWORD}`)}`,
+        Authorization: `Bearer ${await createJwt(jwtPayload, JWT_SECRET)}`,
       },
     });
   }
@@ -239,7 +317,23 @@ describe("index.ts", () => {
   async function deleteTask(id: string) {
     return worker.fetch(`/tasks/${id}`, {
       method: "DELETE",
-      headers: { Authorization: `Basic ${btoa(`${USERNAME}:${PASSWORD}`)}` },
+      headers: {
+        Authorization: `Bearer ${await createJwt(jwtPayload, JWT_SECRET)}`,
+      },
     });
   }
 });
+
+async function createKey(): Promise<string> {
+  const cryptoKey = await crypto.subtle.generateKey(
+    { name: "HMAC", hash: "SHA-512" },
+    true,
+    ["sign"],
+  );
+  const keyBuf = await crypto.subtle.exportKey("raw", cryptoKey as CryptoKey);
+  return new TextDecoder().decode(keyBuf as ArrayBuffer);
+}
+
+async function createJwt(payload: unknown, key: string): Promise<string> {
+  return await sign(payload, key, "HS512");
+}

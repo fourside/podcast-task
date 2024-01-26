@@ -1,6 +1,14 @@
 import type { Context, MiddlewareHandler } from "hono";
 
 export const log = async (c: Context, message: string, metadata?: unknown) => {
+  if (
+    c.env.LOGFLARE_API_KEY === undefined ||
+    c.env.LOGFLARE_SOURCE === undefined
+  ) {
+    console.log(message);
+    return;
+  }
+
   await fetch("https://api.logflare.app/logs", {
     method: "POST",
     headers: {
