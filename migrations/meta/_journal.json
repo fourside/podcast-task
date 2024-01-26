@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1706278798897,
+      "tag": "0000_stormy_jetstream",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1706279221962,
+      "tag": "0001_lame_stick",
+      "breakpoints": true
+    }
+  ]
+}

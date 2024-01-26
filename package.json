@@ -6,12 +6,15 @@
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "check": "biome ci src",
-    "deploy:schema": "wrangler d1 execute podcast-task --file=./schema.sql",
+    "migrate:generate": "drizzle-kit generate:sqlite",
+    "migrate:list": "wrangler d1 migrations list podcast-task",
+    "migrate:apply": "wrangler d1 migrations apply podcast-task",
     "prepare": "git config --local core.hooksPath .githooks"
   },
   "devDependencies": {
     "@biomejs/biome": "1.5.2",
     "@cloudflare/workers-types": "^4.20240117.0",
+    "drizzle-kit": "^0.20.13",
     "typescript": "^5.0.4",
     "wrangler": "^3.0.0"
   },

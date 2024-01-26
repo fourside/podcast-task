@@ -18,3 +18,14 @@ export const tasks = sqliteTable(
     unq: unique("").on(t.title, t.fromTime),
   }),
 );
+
+export const users = sqliteTable(
+  "Users",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+  },
+  (t) => ({
+    unq: unique("unique_name").on(t.name),
+  }),
+);
