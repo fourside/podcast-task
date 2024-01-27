@@ -35,3 +35,5 @@ jobs:
         env:
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
+          LOGFLARE_API_KEY: ${{ secrets.LOGFLARE_API_KEY }}
+          LOGFLARE_SOURCE: ${{ secrets.LOGFLARE_SOURCE }}

@@ -5,17 +5,22 @@ import { Hono } from "hono";
 import { basicAuth } from "hono/basic-auth";
 import type { Describe } from "superstruct";
 import { object, pattern, string, validate } from "superstruct";
+import { logger } from "./logger";
 import { tasks } from "./schema";
 
 type Bindings = {
   DB: D1Database;
   USERNAME: string;
   PASSWORD: string;
+  LOGFLARE_API_KEY: string;
+  LOGFLARE_SOURCE: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
 
 app.use("*", sentry());
+
+app.use("*", logger);
 
 app.use("/tasks", async (c, next) => {
   const auth = basicAuth({
