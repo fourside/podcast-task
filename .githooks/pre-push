@@ -3,3 +3,4 @@ set -xe
 
 # npx tsc --noEmit
 npm run check
+npm run test -- run
