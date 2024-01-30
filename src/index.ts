@@ -3,6 +3,7 @@ import { desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { basicAuth } from "hono/basic-auth";
+import { HTTPException } from "hono/http-exception";
 import type { Describe } from "superstruct";
 import { object, pattern, string, validate } from "superstruct";
 import { logger } from "./logger";
@@ -31,8 +32,11 @@ app.use("/tasks", async (c, next) => {
 });
 
 app.onError((error, c) => {
-  c.status(500);
-  return c.json({ message: "error" });
+  if (error instanceof HTTPException) {
+    return c.json({ message: error.message }, error.status);
+  }
+  console.error(error);
+  return c.json({ message: error.message }, 500);
 });
 
 type Task = Omit<typeof tasks.$inferSelect, "id" | "createdAt">;
@@ -59,14 +63,14 @@ app.post("/tasks", async (c) => {
   const json = await c.req.json();
   const [err, task] = validate(json, taskSchema);
   if (err !== undefined) {
-    return c.json({ message: JSON.stringify(err) }, 400);
+    return c.json({ message: `${err.key} is invalid` }, 400);
   }
   const db = drizzle(c.env.DB);
   const prepare = db
     .insert(tasks)
     .values({
       id: sql.placeholder("id"),
-      stationId: sql.placeholder("sationId"),
+      stationId: sql.placeholder("stationId"),
       title: sql.placeholder("title"),
       fromTime: sql.placeholder("fromTime"),
       duration: sql.placeholder("duration"),
@@ -74,8 +78,18 @@ app.post("/tasks", async (c) => {
     })
     .prepare();
   const id = crypto.randomUUID();
-  await prepare.execute({ id, ...task });
-  return c.json({ message: "success" }, 201);
+  try {
+    await prepare.execute({ id, ...task });
+    return c.json({ message: "success" }, 201);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      /^D1_ERROR: UNIQUE constraint failed/.test(error.message)
+    ) {
+      return c.json({ message: "already created" }, 400);
+    }
+    throw error;
+  }
 });
 
 app.delete("/tasks/:id", async (c) => {

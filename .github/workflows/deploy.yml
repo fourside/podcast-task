@@ -24,6 +24,9 @@ jobs:
       - name: Lint
         run: npm run check
 
+      - name: Test
+        run: npm run test
+
       - name: Deploy
         uses: cloudflare/wrangler-action@v3
         with:
