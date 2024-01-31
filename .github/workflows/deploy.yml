@@ -36,7 +36,6 @@ jobs:
             PASSWORD
           command: deploy --minify src/index.ts
         env:
-          USERNAME: ${{ secrets.USERNAME }}
-          PASSWORD: ${{ secrets.PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           LOGFLARE_API_KEY: ${{ secrets.LOGFLARE_API_KEY }}
           LOGFLARE_SOURCE: ${{ secrets.LOGFLARE_SOURCE }}
