@@ -32,8 +32,9 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           secrets: |
-            USERNAME
-            PASSWORD
+            JWT_SECRET
+            LOGFLARE_API_KEY
+            LOGFLARE_SOURCE
           command: deploy --minify src/index.ts
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
