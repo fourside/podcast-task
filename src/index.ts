@@ -74,10 +74,10 @@ app.use("*", async (c, next) => {
 });
 
 app.onError((error, c) => {
+  console.error(error);
   if (error instanceof HTTPException) {
     return c.json({ message: error.message }, error.status);
   }
-  console.error(error);
   return c.json({ message: error.message }, 500);
 });
 
