@@ -25,8 +25,8 @@ describe(convert.name, () => {
       stationId: task.stationId,
       title: task.title,
       personality: task.personality,
-      fromTime: { year: 2024, month: 1, day: 2, hour: 3, min: 0 },
-      toTime: { year: 2024, month: 1, day: 2, hour: 3, min: 10 },
+      from: { year: 2024, month: 1, day: 2, hour: 3, min: 0 },
+      to: { year: 2024, month: 1, day: 2, hour: 3, min: 10 },
     });
   });
 });

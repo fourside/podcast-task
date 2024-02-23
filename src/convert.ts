@@ -6,8 +6,8 @@ export function convert(task: TaskRecord): LambdaPayload {
     stationId: task.stationId,
     title: task.title,
     personality: task.personality,
-    fromTime: parse(task.fromTime),
-    toTime: parse(task.toTime),
+    from: parse(task.fromTime),
+    to: parse(task.toTime),
   };
 }
 
@@ -39,8 +39,8 @@ type LambdaPayload = {
   stationId: string;
   title: string;
   personality: string;
-  fromTime: DateTime;
-  toTime: DateTime;
+  from: DateTime;
+  to: DateTime;
 };
 
 type DateTime = {
