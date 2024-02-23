@@ -86,7 +86,7 @@ app.onError((error, c) => {
 
 type Task = Omit<typeof tasks.$inferSelect, "id" | "createdAt">;
 
-const taskSchema: Describe<Task> = object({
+const taskSchema: Describe<Omit<Task, "status">> = object({
   stationId: string(),
   title: string(),
   fromTime: pattern(string(), /^\d{12}$/),

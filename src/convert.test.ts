@@ -15,6 +15,7 @@ describe(convert.name, () => {
       fromTime: "202401020300",
       toTime: "202401020310",
       duration: "10",
+      status: "pending",
       createdAt: new Date().toLocaleString(),
     };
     // act

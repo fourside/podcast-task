@@ -124,6 +124,7 @@ describe("index.ts", async () => {
           duration: "60",
           fromTime: "202401011230",
           toTime: "202401011330",
+          status: "pending",
           createdAt: "2024-01-30 23:00:00",
         },
         {
@@ -134,6 +135,7 @@ describe("index.ts", async () => {
           duration: "120",
           fromTime: "202401010300",
           toTime: "202401010500",
+          status: "pending",
           createdAt: "2024-01-30 23:30:00",
         },
       ];

@@ -14,7 +14,7 @@ export async function runTasks(
     .select()
     .from(tasks)
     .orderBy(desc(tasks.createdAt))
-    .all();
+    .where(eq(tasks.status, "pending"));
 
   if (result.length === 0) {
     return;
@@ -32,6 +32,10 @@ export async function runTasks(
 
   // invoke one by one to avoid from timeout of lambda
   for (const payload of payloads) {
+    await db
+      .update(tasks)
+      .set({ status: "doing" })
+      .where(eq(tasks.id, payload.id));
     const res = await lambda.send(
       new InvokeCommand({
         FunctionName: "podcast-lambda-spot-task",

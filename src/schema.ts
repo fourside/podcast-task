@@ -11,6 +11,7 @@ export const tasks = sqliteTable(
     toTime: text("toTime").notNull(),
     duration: text("duration").notNull(),
     personality: text("personality").notNull(),
+    status: text("status").notNull().default("pending"),
     createdAt: text("createdAt")
       .notNull()
       .default(sql`(DATETIME('now', 'localtime'))`),

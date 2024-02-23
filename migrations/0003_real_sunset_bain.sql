@@ -1,0 +1,1 @@
+ALTER TABLE Tasks ADD `status` text DEFAULT 'pending' NOT NULL;
