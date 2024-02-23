@@ -8,6 +8,7 @@ export const tasks = sqliteTable(
     stationId: text("stationId").notNull(),
     title: text("title").notNull(),
     fromTime: text("fromTime").notNull(),
+    toTime: text("toTime").notNull(),
     duration: text("duration").notNull(),
     personality: text("personality").notNull(),
     createdAt: text("createdAt")

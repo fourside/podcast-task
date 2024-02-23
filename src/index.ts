@@ -87,6 +87,7 @@ const taskSchema: Describe<Task> = object({
   stationId: string(),
   title: string(),
   fromTime: pattern(string(), /^\d{12}$/),
+  toTime: pattern(string(), /^\d{12}$/),
   duration: pattern(string(), /^\d+$/),
   personality: string(),
 });
@@ -115,6 +116,7 @@ app.post("/tasks", async (c) => {
       stationId: sql.placeholder("stationId"),
       title: sql.placeholder("title"),
       fromTime: sql.placeholder("fromTime"),
+      toTime: sql.placeholder("toTime"),
       duration: sql.placeholder("duration"),
       personality: sql.placeholder("personality"),
     })
