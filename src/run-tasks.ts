@@ -38,6 +38,7 @@ export async function runTasks(
         Payload: JSON.stringify(payload),
       }),
     );
+    console.log(res);
     if (res.StatusCode === 200) {
       const prepare = db
         .delete(tasks)
