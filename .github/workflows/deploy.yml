@@ -35,8 +35,12 @@ jobs:
             JWT_SECRET
             LOGFLARE_API_KEY
             LOGFLARE_SOURCE
+            AWS_ACCESS_KEY_ID
+            AWS_SECRET_ACCESS_KEY
           command: deploy --minify src/index.ts
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           LOGFLARE_API_KEY: ${{ secrets.LOGFLARE_API_KEY }}
           LOGFLARE_SOURCE: ${{ secrets.LOGFLARE_SOURCE }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

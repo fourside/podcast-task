@@ -7,6 +7,7 @@ import { jwt } from "hono/jwt";
 import type { Describe } from "superstruct";
 import { number, object, pattern, string, validate } from "superstruct";
 import { logger } from "./logger";
+import { runTasks } from "./run-tasks";
 import { tasks, users } from "./schema";
 
 type Bindings = {
@@ -14,6 +15,8 @@ type Bindings = {
   LOGFLARE_API_KEY: string;
   LOGFLARE_SOURCE: string;
   JWT_SECRET: string;
+  AWS_ACCESS_KEY_ID: string;
+  AWS_SECRET_ACCESS_KEY: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -146,4 +149,15 @@ app.delete("/tasks/:id", async (c) => {
   return c.json({ message: "success" });
 });
 
-export default app;
+async function scheduled(
+  event: ScheduledEvent,
+  env: Bindings,
+  ctx: ExecutionContext,
+): Promise<void> {
+  await runTasks(env.DB, env.AWS_ACCESS_KEY_ID, env.AWS_SECRET_ACCESS_KEY);
+}
+
+export default {
+  fetch: app.fetch,
+  scheduled,
+};

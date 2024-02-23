@@ -123,6 +123,7 @@ describe("index.ts", async () => {
           personality: "John",
           duration: "60",
           fromTime: "202401011230",
+          toTime: "202401011330",
           createdAt: "2024-01-30 23:00:00",
         },
         {
@@ -132,6 +133,7 @@ describe("index.ts", async () => {
           personality: "Doe",
           duration: "120",
           fromTime: "202401010300",
+          toTime: "202401010500",
           createdAt: "2024-01-30 23:30:00",
         },
       ];
@@ -166,6 +168,7 @@ describe("index.ts", async () => {
         personality: "John Doe",
         duration: "15",
         fromTime: "202402011200",
+        toTime: "202402011215",
       };
       // act
       const res = await postTask(value);
@@ -188,6 +191,7 @@ describe("index.ts", async () => {
         personality: "John Doe",
         duration: "15",
         fromTime: "202402011200",
+        toTime: "202402011215",
       };
       const wrongDuration = {
         stationId: "TBS",
@@ -195,6 +199,7 @@ describe("index.ts", async () => {
         personality: "John Doe",
         duration: "15a",
         fromTime: "202402011200",
+        toTime: "202402011200",
       };
       const wrongFromTime = {
         stationId: "TBS",
@@ -202,6 +207,7 @@ describe("index.ts", async () => {
         personality: "John Doe",
         duration: "15",
         fromTime: "2024-02-01 12:00",
+        toTime: "202402011200",
       };
 
       // act
@@ -238,6 +244,7 @@ describe("index.ts", async () => {
         personality: "John Doe",
         duration: "60",
         fromTime: "202403012300",
+        toTime: "202403020000",
       };
       await drizzle(d1).insert(tasks).values(alreadyInserted);
       const duplicated = {
@@ -246,6 +253,7 @@ describe("index.ts", async () => {
         personality: "Scot",
         duration: "120",
         fromTime: "202403012300",
+        toTime: "202403020100",
       };
       // act
       const res = await postTask(duplicated);
@@ -267,6 +275,7 @@ describe("index.ts", async () => {
         personality: "John Doe",
         duration: "90",
         fromTime: "202404010830",
+        toTime: "202404011000",
       };
       await drizzle(d1).insert(tasks).values(toBeDeleted);
       // act

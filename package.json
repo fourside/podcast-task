@@ -23,6 +23,7 @@
     "wrangler": "^3.25.0"
   },
   "dependencies": {
+    "@aws-sdk/client-lambda": "^3.511.0",
     "@hono/sentry": "^1.0.0",
     "drizzle-orm": "^0.29.3",
     "hono": "^3.12.6",
