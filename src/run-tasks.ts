@@ -1,6 +1,7 @@
 import { InvokeCommand, LambdaClient } from "@aws-sdk/client-lambda";
-import { desc, eq, sql } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
+import { object, string, validate } from "superstruct";
 import { convert } from "./convert";
 import { tasks } from "./schema";
 
@@ -13,7 +14,7 @@ export async function runTasks(
   const result = await db
     .select()
     .from(tasks)
-    .orderBy(desc(tasks.createdAt))
+    .orderBy(asc(tasks.createdAt))
     .where(eq(tasks.status, "pending"))
     .limit(1); // invoke one by one to avoid from timeout of lambda
 
@@ -42,13 +43,54 @@ export async function runTasks(
     }),
   );
   console.log(res);
-  if (res.StatusCode === 200) {
-    const prepare = db
-      .delete(tasks)
-      .where(eq(tasks.id, sql.placeholder("id")))
-      .prepare();
-    await prepare.execute({ id: payload.id });
-  } else {
+
+  if (res.StatusCode !== 200) {
     console.error("fail to invoke lambda.", res.StatusCode, res.Payload);
+    return;
+  }
+
+  const resBody = res.Payload?.transformToString();
+  if (resBody === undefined) {
+    console.error("invoke error: response body is empty.");
+    return;
+  }
+
+  const resJson = parseAsJson(resBody);
+  if (resJson === undefined) {
+    console.error("invoke error: response payload is not json", resBody);
+    return;
+  }
+
+  const [err, resPayload] = validate(resJson, lambdaResponsePayload);
+  if (err !== undefined) {
+    console.error(
+      "invoke error: response payload is invalid for schema",
+      resJson,
+      JSON.stringify(err),
+    );
+    return;
+  }
+
+  if (resPayload.message !== "success") {
+    console.error("invoke error: message is not success", resPayload);
+    return;
+  }
+
+  const prepare = db
+    .delete(tasks)
+    .where(eq(tasks.id, sql.placeholder("id")))
+    .prepare();
+  await prepare.execute({ id: payload.id });
+}
+
+function parseAsJson(string: string): unknown {
+  try {
+    return JSON.parse(string);
+  } catch (e) {
+    // ignore
   }
 }
+
+const lambdaResponsePayload = object({
+  message: string(),
+});
