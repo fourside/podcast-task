@@ -10,7 +10,7 @@ import {
 } from "vitest";
 import type { UnstableDevWorker } from "wrangler";
 import { getBindingsProxy, unstable_dev } from "wrangler";
-import { tasks, users, type TaskRecord } from "./schema";
+import { type TaskRecord, tasks, users } from "./schema";
 
 describe("index.ts", async () => {
   let worker: UnstableDevWorker;

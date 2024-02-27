@@ -4,11 +4,17 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { jwt } from "hono/jwt";
-import type { Describe } from "superstruct";
-import { number, object, pattern, string, validate } from "superstruct";
+import {
+  type Describe,
+  number,
+  object,
+  pattern,
+  string,
+  validate,
+} from "superstruct";
 import { logger } from "./logger";
 import { runTask } from "./run-task";
-import { tasks, users, type TaskRecord } from "./schema";
+import { type TaskRecord, tasks, users } from "./schema";
 
 type Bindings = {
   DB: D1Database;
