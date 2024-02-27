@@ -17,6 +17,9 @@
   "devDependencies": {
     "@biomejs/biome": "1.5.2",
     "@cloudflare/workers-types": "^4.20240117.0",
+    "@smithy/util-stream": "^2.1.2",
+    "aws-sdk-client-mock": "^3.0.1",
+    "aws-sdk-client-mock-jest": "^3.0.1",
     "drizzle-kit": "^0.20.13",
     "typescript": "^5.0.4",
     "vitest": "^1.2.2",

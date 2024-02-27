@@ -9,7 +9,7 @@ import { number, object, string, validate } from "superstruct";
 import { convert } from "./convert";
 import { tasks } from "./schema";
 
-export async function runTasks(
+export async function runTask(
   d1: D1Database,
   awsAccessKeyId: string,
   awsSecretAccessKey: string,

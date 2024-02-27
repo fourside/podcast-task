@@ -1,8 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { convert } from "./convert";
-import { tasks } from "./schema";
-
-type TaskRecord = typeof tasks.$inferSelect;
+import type { TaskRecord } from "./schema";
 
 describe(convert.name, () => {
   test("通常", () => {

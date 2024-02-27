@@ -1,4 +1,4 @@
-import { tasks } from "./schema";
+import type { TaskRecord } from "./schema";
 
 export function convert(task: TaskRecord): LambdaPayload {
   return {
@@ -31,8 +31,6 @@ function parseAsInt(str: string): number {
   }
   return result;
 }
-
-type TaskRecord = typeof tasks.$inferSelect;
 
 type LambdaPayload = {
   id: string;

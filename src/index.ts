@@ -7,8 +7,8 @@ import { jwt } from "hono/jwt";
 import type { Describe } from "superstruct";
 import { number, object, pattern, string, validate } from "superstruct";
 import { logger } from "./logger";
-import { runTasks } from "./run-tasks";
-import { tasks, users } from "./schema";
+import { runTask } from "./run-task";
+import { tasks, users, type TaskRecord } from "./schema";
 
 type Bindings = {
   DB: D1Database;
@@ -84,7 +84,7 @@ app.onError((error, c) => {
   return c.json({ message: error.message }, 500);
 });
 
-type Task = Omit<typeof tasks.$inferSelect, "id" | "createdAt">;
+type Task = Omit<TaskRecord, "id" | "createdAt">;
 
 const taskSchema: Describe<Omit<Task, "status">> = object({
   stationId: string(),
@@ -154,7 +154,7 @@ async function scheduled(
   env: Bindings,
   ctx: ExecutionContext,
 ): Promise<void> {
-  await runTasks(env.DB, env.AWS_ACCESS_KEY_ID, env.AWS_SECRET_ACCESS_KEY);
+  await runTask(env.DB, env.AWS_ACCESS_KEY_ID, env.AWS_SECRET_ACCESS_KEY);
 }
 
 export default {

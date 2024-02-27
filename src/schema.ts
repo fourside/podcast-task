@@ -21,6 +21,8 @@ export const tasks = sqliteTable(
   }),
 );
 
+export type TaskRecord = typeof tasks.$inferSelect;
+
 export const users = sqliteTable(
   "Users",
   {
