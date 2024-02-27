@@ -1,7 +1,11 @@
-import { InvokeCommand, LambdaClient } from "@aws-sdk/client-lambda";
+import {
+  InvokeCommand,
+  LambdaClient,
+  type InvokeCommandOutput,
+} from "@aws-sdk/client-lambda";
 import { asc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { object, string, validate } from "superstruct";
+import { number, object, string, validate } from "superstruct";
 import { convert } from "./convert";
 import { tasks } from "./schema";
 
@@ -43,38 +47,7 @@ export async function runTasks(
     }),
   );
   console.log(res);
-
-  if (res.StatusCode !== 200) {
-    console.error("fail to invoke lambda.", res.StatusCode, res.Payload);
-    return;
-  }
-
-  const resBody = res.Payload?.transformToString();
-  if (resBody === undefined) {
-    console.error("invoke error: response body is empty.");
-    return;
-  }
-
-  const resJson = parseAsJson(resBody);
-  if (resJson === undefined) {
-    console.error("invoke error: response payload is not json", resBody);
-    return;
-  }
-
-  const [err, resPayload] = validate(resJson, lambdaResponsePayload);
-  if (err !== undefined) {
-    console.error(
-      "invoke error: response payload is invalid for schema",
-      resJson,
-      JSON.stringify(err),
-    );
-    return;
-  }
-
-  if (resPayload.message !== "success") {
-    console.error("invoke error: message is not success", resPayload);
-    return;
-  }
+  validateLambdaResponse(res);
 
   const prepare = db
     .delete(tasks)
@@ -91,6 +64,54 @@ function parseAsJson(string: string): unknown {
   }
 }
 
-const lambdaResponsePayload = object({
+function validateLambdaResponse(res: InvokeCommandOutput): void {
+  if (res.StatusCode !== 200) {
+    throw new Error(`fail to invoke lambda: ${res.StatusCode}`);
+  }
+
+  const payloadStr = res.Payload?.transformToString();
+  if (payloadStr === undefined) {
+    throw new Error("invoke error: response payload is empty.");
+  }
+
+  const payloadJson = parseAsJson(payloadStr);
+  const [err, payload] = validate(payloadJson, payloadSchema);
+  if (err !== undefined) {
+    throw new Error(
+      `invoke error: response payload is invalid for schema, ${JSON.stringify(
+        err,
+      )}`,
+    );
+  }
+
+  if (payload.statusCode !== 200) {
+    throw new Error(
+      `lambda application error: status code is ${payload.statusCode} and body is ${payload.body}`,
+    );
+  }
+
+  const bodyJson = parseAsJson(payload.body);
+  const [bodyErr, body] = validate(bodyJson, payloadBodySchema);
+  if (bodyErr !== undefined) {
+    throw new Error(
+      `invoke error: payload body is invalid for schema, ${JSON.stringify(
+        bodyErr,
+      )}`,
+    );
+  }
+
+  if (body.message !== "success") {
+    throw new Error(
+      `lambda application error: message is not success, ${body}`,
+    );
+  }
+}
+
+const payloadSchema = object({
+  statusCode: number(),
+  body: string(),
+});
+
+const payloadBodySchema = object({
   message: string(),
 });
