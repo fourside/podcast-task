@@ -2,6 +2,7 @@ import type { TaskRecord } from "./schema";
 
 export function convert(task: TaskRecord): LambdaPayload {
   return {
+    type: "spot-task",
     id: task.id,
     stationId: task.stationId,
     title: task.title,
@@ -33,6 +34,7 @@ function parseAsInt(str: string): number {
 }
 
 type LambdaPayload = {
+  type: "spot-task";
   id: string;
   stationId: string;
   title: string;

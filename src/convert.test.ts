@@ -20,6 +20,7 @@ describe(convert.name, () => {
     const result = convert(task);
     // assert
     expect(result).toStrictEqual<ReturnType<typeof convert>>({
+      type: "spot-task",
       id: task.id,
       stationId: task.stationId,
       title: task.title,
