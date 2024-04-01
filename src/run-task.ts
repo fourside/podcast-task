@@ -42,7 +42,7 @@ export async function runTask(
     .where(eq(tasks.id, payload.id));
   const res = await lambda.send(
     new InvokeCommand({
-      FunctionName: "podcast-lambda-spot-task",
+      FunctionName: "podcast-lambda",
       Payload: JSON.stringify(payload),
     }),
   );
